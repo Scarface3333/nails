@@ -1,13 +1,13 @@
 // /controllers/adminController.js
-import pool from '../models/db.js';
 import jwt from 'jwt-simple';
+import { prisma } from '../prisma/prisma-client.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const adminLogin = async (req, res) => {
   const { login, password } = req.body;
+
   if (login === 'beauty' && password === 'pass') {
-    // Формируем токен с флагом администратора
     const payload = { admin: true };
     const token = jwt.encode(payload, JWT_SECRET);
     res.json({ token });
@@ -18,15 +18,36 @@ export const adminLogin = async (req, res) => {
 
 export const getAllAppointments = async (req, res) => {
   try {
-    const appointments = await pool.query(
-      `SELECT a.*, u.fio, u.phone, m.name as master_name 
-       FROM appointments a 
-       LEFT JOIN users u ON a.user_id = u.id
-       LEFT JOIN masters m ON a.master_id = m.id
-       ORDER BY a.date, a.time`
-    );
-    res.json(appointments.rows);
+    const appointments = await prisma.appointment.findMany({
+      include: {
+        user: {
+          select: {
+            fio: true,
+            phone: true,
+          },
+        },
+        master: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { date: 'asc' },
+        { time: 'asc' },
+      ],
+    });
+
+    const formatted = appointments.map(app => ({
+      ...app,
+      fio: app.user?.fio || null,
+      phone: app.user?.phone || null,
+      master_name: app.master?.name || null,
+    }));
+
+    res.json(formatted);
   } catch (error) {
+    console.error('Ошибка при получении заявок:', error);
     res.status(500).json({ message: 'Ошибка получения заявок', error });
   }
 };
@@ -34,25 +55,32 @@ export const getAllAppointments = async (req, res) => {
 export const updateAppointmentStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  // Разрешены только изменения на confirmed или rejected
+
   if (!['confirmed', 'rejected'].includes(status)) {
     return res.status(400).json({ message: 'Неверный статус' });
   }
+
   try {
-    const appointmentRes = await pool.query(`SELECT * FROM appointments WHERE id = $1`, [id]);
-    const appointment = appointmentRes.rows[0];
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: Number(id) },
+    });
+
     if (!appointment) {
       return res.status(404).json({ message: 'Заявка не найдена' });
     }
+
     if (appointment.status !== 'new') {
       return res.status(400).json({ message: 'Можно менять статус только для заявок со статусом "new"' });
     }
-    const updatedApp = await pool.query(
-      `UPDATE appointments SET status = $1 WHERE id = $2 RETURNING *`,
-      [status, id]
-    );
-    res.json(updatedApp.rows[0]);
+
+    const updatedApp = await prisma.appointment.update({
+      where: { id: Number(id) },
+      data: { status },
+    });
+
+    res.json(updatedApp);
   } catch (error) {
+    console.error('Ошибка при обновлении статуса:', error);
     res.status(500).json({ message: 'Ошибка обновления статуса', error });
   }
 };

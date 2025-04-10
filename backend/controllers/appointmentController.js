@@ -1,5 +1,7 @@
 // /controllers/appointmentController.js
-import pool from '../models/db.js';
+import {prisma} from '../prisma/prisma-client.js'
+
+
 
 export const createAppointment = async (req, res) => {
   const userId = req.user.id;  // id пользователя, полученное через authMiddleware
@@ -13,19 +15,31 @@ export const createAppointment = async (req, res) => {
   
   try {
     // Проверка наличия другой заявки у мастера в выбранную дату и время со статусом new или confirmed
-    const conflict = await pool.query(
-      `SELECT * FROM appointments WHERE master_id = $1 AND date = $2 AND time = $3 AND status IN ('new', 'confirmed')`,
-      [master_id, date, time]
-    );
-    if (conflict.rows.length > 0) {
+    const conflict = await prisma.appointment.findFirst({
+      where: {
+        masterId: master_id,
+        date,
+        time,
+        status: {
+          in: ['new', 'confirmed'],
+        },
+      },
+    });
+    if (conflict) {
       return res.status(400).json({ message: 'Выбранное время недоступно' });
     }
+    
     // Создаём заявку со статусом new
-    const newApp = await pool.query(
-      `INSERT INTO appointments (user_id, master_id, date, time, status) VALUES ($1, $2, $3, $4, 'new') RETURNING *`,
-      [userId, master_id, date, time]
-    );
-    res.status(201).json(newApp.rows[0]);
+    const newApp = await prisma.appointment.create({
+      data: {
+        userId,
+        masterId: master_id,
+        date,
+        time,
+        status: 'new',
+      },
+    });
+    res.status(201).json(newApp);
   } catch (error) {
     res.status(500).json({ message: 'Ошибка создания заявки', error });
   }
@@ -34,15 +48,23 @@ export const createAppointment = async (req, res) => {
 export const getUserAppointments = async (req, res) => {
   const userId = req.user.id;
   try {
-    const appointments = await pool.query(
-      `SELECT a.*, m.name as master_name 
-       FROM appointments a 
-       LEFT JOIN masters m ON a.master_id = m.id 
-       WHERE user_id = $1 
-       ORDER BY date, time`,
-      [userId]
-    );
-    res.json(appointments.rows);
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        master: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        date: 'asc',
+        time: 'asc',
+      },
+    });
+    res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: 'Ошибка получения заявок', error });
   }
@@ -50,8 +72,8 @@ export const getUserAppointments = async (req, res) => {
 
 export const getMasters = async (req, res) => {
   try {
-    const masters = await pool.query(`SELECT * FROM masters`);
-    res.json(masters.rows);
+    const masters = await prisma.master.findMany();
+    res.json(masters);
   } catch (error) {
     res.status(500).json({ message: 'Ошибка получения списка мастеров', error });
   }

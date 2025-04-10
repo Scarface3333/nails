@@ -1,3 +1,5 @@
+import { Route, Routes } from "react-router-dom"
+import Auth from "./pages/Auth"
 
 
 
@@ -5,9 +7,10 @@ function App() {
   
 
   return (
-    <div className='text-red-500' >
-      Hello
-    </div>
+    <Routes>
+      <Route path="/" element={<Auth />} />
+    </Routes>
+    
   )
 }
 

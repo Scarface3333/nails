@@ -1,3 +1,1 @@
-// src/constants.js
-
-export const BASE_URL = 'http://localhost:3000';  // Базовый URL для API запросов
+export const BASE_URL = process.env.NODE_ENV === 'production'  ? 'http://localhost:3001'  : 'http://localhost:3001';

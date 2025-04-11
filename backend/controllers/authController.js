@@ -1,7 +1,7 @@
-// /controllers/authController.js
 import {prisma} from '../prisma/prisma-client.js'
+
 import bcrypt from 'bcrypt';
-import jwt from 'jwt-simple';
+import jwt from 'jsonwebtoken'; 
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -68,16 +68,15 @@ export const login = async (req, res) => {
     });
     if (!user) {
       return res.status(400).json({ message: 'Неверный логин или пароль' });
-    }
-    
+    }    
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Неверный логин или пароль' });
     }
-    
-    const payload = { id: user.id, login: user.login };
-    const token = jwt.encode(payload, JWT_SECRET);
-    res.json({ token });
+    const payload = { id: user.id, login: user.login, role: user.role };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' }); 
+
+    res.json({ token, role: user.role });
   } catch (error) {
     res.status(500).json({ message: 'Ошибка сервера', error });
   }

@@ -11,17 +11,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegisterMutation } from "../app/services/userApi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export function RegisterForm({ className, ...props }) {
+export function RegisterForm({ className,setSelected, ...props }) {
   const [formData, setFormData] = useState({
     fio: "",
     phone: "",
     login: "",
     password: "",
   });
-
-  const [registerUser] = useRegisterMutation();
+  
+  const [registerUser,{isLoading,isError}] = useRegisterMutation();
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -36,14 +36,15 @@ export function RegisterForm({ className, ...props }) {
     try {
       const result = await registerUser(formData).unwrap();
       console.log("Успешная регистрация:", result);
-   
+      setSelected('login')
+
     } catch (err) {
       console.error("Ошибка при регистрации:", err);
     }
   };
 
   return (
-    <div className="flex mx-auto mt-10">
+  
       <div className={cn("flex flex-col gap-6", className)} {...props}>
         <Card>
           <CardHeader>
@@ -101,17 +102,23 @@ export function RegisterForm({ className, ...props }) {
               <Button type="submit" className="w-full">
                 Зарегистрироваться
               </Button>
-              <Link
-                to="/auth"  
-                className="cursor-pointer"
+              <span
+                onClick={() => setSelected('login')}
+                className="underline underline-offset-4 cursor-pointer text-blue-500"
               >
-                Войти
-              </Link>
+                Уже есть аккаунт? Войти
+              </span>
+              {isError && (
+              <div className="text-red-500 text-sm mt-2">
+                Ошибка при регистрации.
+              </div>
+            )}
+
 
             </form>
           </CardContent>
         </Card>
       </div>
-    </div>
+
   );
 }

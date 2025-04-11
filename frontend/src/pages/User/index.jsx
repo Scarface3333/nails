@@ -1,5 +1,11 @@
+import { MastersList } from "@/components/MastersList"
+import { UserAppointments } from "@/components/userAppointments"
+
 export const User = () => {
   return (
-    <div>User</div>
+    <>
+      <MastersList />
+      <UserAppointments/>
+    </>
   )
 }

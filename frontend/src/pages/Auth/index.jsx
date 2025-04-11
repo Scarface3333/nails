@@ -1,44 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '@/components/login-form';
 import { RegisterForm } from '@/components/register-form';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
-  const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   const token = localStorage.getItem('token');
-  //   if (token) {
-  //     try {
-  //       const payload = JSON.parse(atob(token.split('.')[1]));
-  //       console.log(payload)
-  //       if (payload.admin) {
-  //         navigate('/admin');
-  //       } else if (payload.id) {
-  //         navigate('/user');
-  //       }
-  //     } catch (e) {
-  //       console.error('Ошибка при декодировании токена', e);
-  //     }
-  //   }
-  // }, []);
-
+  const [selected, setSelected] = useState('login');
+  
   return (
-    <div className="auth-container">
-      <div className="form-wrapper">
-        {isLogin ? (
+
+      <div className='w-full min-w-80 mx-auto' >
+        {selected === 'login' ? (
           <>
-            <LoginForm />
-            <p>Нет аккаунта? <button onClick={() => setIsLogin(false)}>Зарегистрироваться</button></p>
+            <LoginForm setSelected={setSelected} />
           </>
         ) : (
           <>
-            <RegisterForm />
-            <p>Уже есть аккаунт? <button onClick={() => setIsLogin(true)}>Войти</button></p>
+            <RegisterForm setSelected={setSelected} />
           </>
         )}
       </div>
-    </div>
   );
 }

@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useLoginMutation } from "../app/services/userApi"; // Импорт хука для логина
-import { Link, useNavigate } from "react-router-dom"; // Для навигации
+import {  useNavigate } from "react-router-dom"; // Для навигации
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm({ className, ...props }) {
+export function LoginForm({ className,setSelected, ...props }) {
   const [formData, setFormData] = useState({ login: "", password: "" });
-  const [loginUser, { isLoading, isError }] = useLoginMutation(); 
-  const navigate = useNavigate(); 
+  const [loginUser, { isLoading, isError }] = useLoginMutation();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -23,11 +23,15 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault();
 
     try {
-      const result = await loginUser(formData).unwrap(); 
+      const result = await loginUser(formData).unwrap();
       console.log("Успешный вход:", result);
       localStorage.setItem('token', result.token);
-       navigate("/user"); 
-       
+
+      if (result.role === 'admin') {
+        navigate('/admin')
+      } else {
+         navigate("/user");
+      }
     } catch (err) {
       console.error("Ошибка при входе:", err);
     }
@@ -37,9 +41,9 @@ export function LoginForm({ className, ...props }) {
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Войдите в свой аккаунт</CardTitle>
           <CardDescription>
-            Enter your login and password to access your account
+            Введите свой логин и пароль чтобы войти в аккаунт
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -87,12 +91,14 @@ export function LoginForm({ className, ...props }) {
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
-              <Link
-                to={'/register'}
-                className="underline underline-offset-4">
-              Sign up
-              </Link>
-            
+
+              <span
+                onClick={() => setSelected('register')}
+                className="underline underline-offset-4 cursor-pointer text-blue-500"
+              >
+                Зарегистрироваться
+              </span>
+
             </div>
             {isError && (
               <div className="text-red-500 text-sm mt-2">

@@ -12,6 +12,7 @@ import { RegisterForm } from './components/register-form';
 import { NotFound } from './components/NotFound';
 import { Admin } from './pages/Admin';
 import { User } from './pages/User';
+import CreateMasterForm from './components/createMasterForm';
 
 
 const container = document.getElementById('root')
@@ -21,17 +22,15 @@ const router = createBrowserRouter([
     path: '/auth',
     element: <Auth/>
   },
-  // {
-  //   path: '/register',
-  //   element: <RegisterForm />, 
-  // },
+
   {
     path: '/',
     element: <Layout />,
     children: [
       {    
           path: '/admin',
-          element:<Admin/> 
+        element: <Admin />, 
+       
       },
       {    
         path: '/user',
@@ -39,10 +38,7 @@ const router = createBrowserRouter([
     }
     ]
   },
-  // {
-  //   path: '*',
-  //   element:<Auth/>
-  // }
+ 
 ])
 
 if (container) {

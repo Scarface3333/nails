@@ -1,22 +1,8 @@
-// /controllers/adminController.js
-import jwt from 'jwt-simple';
 import { prisma } from '../prisma/prisma-client.js';
+import { adminMiddleware } from '../middleware/adminMiddleware.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
 
-export const adminLogin = async (req, res) => {
-  const { login, password } = req.body;
-
-  if (login === 'beauty' && password === 'pass') {
-    const payload = { admin: true };
-    const token = jwt.encode(payload, JWT_SECRET);
-    res.json({ token });
-  } else {
-    res.status(401).json({ message: 'Неверные админские данные' });
-  }
-};
-
-export const getAllAppointments = async (req, res) => {
+export const getAllAppointments = [adminMiddleware, async (req, res) => {
   try {
     const appointments = await prisma.appointment.findMany({
       include: {
@@ -34,7 +20,6 @@ export const getAllAppointments = async (req, res) => {
       },
       orderBy: [
         { date: 'asc' },
-        { time: 'asc' },
       ],
     });
 
@@ -50,9 +35,9 @@ export const getAllAppointments = async (req, res) => {
     console.error('Ошибка при получении заявок:', error);
     res.status(500).json({ message: 'Ошибка получения заявок', error });
   }
-};
+}]
 
-export const updateAppointmentStatus = async (req, res) => {
+export const updateAppointmentStatus = [adminMiddleware, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -83,4 +68,28 @@ export const updateAppointmentStatus = async (req, res) => {
     console.error('Ошибка при обновлении статуса:', error);
     res.status(500).json({ message: 'Ошибка обновления статуса', error });
   }
-};
+}
+]
+
+export const createMaster = [adminMiddleware, async (req, res) => {
+  const { name, specialization } = req.body;
+
+  if (!name || !specialization) {
+    return res.status(400).json({ message: 'Имя и специализация обязательны' });
+  }
+
+  try {
+    const newMaster = await prisma.master.create({
+      data: {
+        name,
+        specialization,
+      },
+    });
+
+    res.status(201).json(newMaster);
+  } catch (error) {
+    console.error('Ошибка при создании мастера:', error);
+    res.status(500).json({ message: 'Ошибка сервера', error });
+  }
+}]
+
